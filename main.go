@@ -17,9 +17,17 @@ type patchMeta struct {
 	FrameworkUrl string `json:"frameworkUrl"`
 }
 
+type mihoyoApiStruct struct {
+	PathData patchMeta `json:"data"`
+	Msg      string    `json:"message"`
+	Code     int       `json:"retcode"`
+}
+
 var (
 	GitHubMeta patchMeta
 	GitLabMeta patchMeta
+	GitHubResponse mihoyoApiStruct
+	GitLabResponse mihoyoApiStruct
 )
 
 func updateGitHubMeta() {
@@ -46,8 +54,12 @@ func updateGitHubMeta() {
 		GitHubMeta.TagName = tagName
 		GitHubMeta.URL = assetUrl
 		GitHubMeta.Source = "github"
+
+		GitHubResponse.PathData = GitHubMeta
+		GitHubResponse.Msg = "success"
+		GitHubResponse.Code = 0
 		fmt.Println("Successfully build GitHub release cache")
-		
+
 		time.Sleep(2 * time.Minute)
 	}
 }
@@ -84,12 +96,17 @@ func updateGitLabMeta() {
 							FUrl, _ := sourceMap["url"].(string)
 							GitLabMeta.FrameworkUrl = FUrl
 							GitHubMeta.FrameworkUrl = strings.Replace(FUrl, "zh-cn", "en-us", 1)
+							GitHubResponse.PathData = GitHubMeta
 						}
 					}
 				}
 			}
 		}
 		GitLabMeta.Source = "jihulab"
+
+		GitLabResponse.PathData = GitLabMeta
+		GitLabResponse.Msg = "success"
+		GitLabResponse.Code = 0
 		fmt.Println("Successfully build GitLab release cache")
 
 		time.Sleep(2 * time.Minute)
@@ -104,12 +121,12 @@ func main() {
 
 	r.GET("/global", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json")
-		c.JSON(http.StatusOK, GitHubMeta)
+		c.JSON(http.StatusOK, GitHubResponse)
 	})
 
 	r.GET("/cn", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json")
-		c.JSON(http.StatusOK, GitLabMeta)
+		c.JSON(http.StatusOK, GitLabResponse)
 	})
 
 	if err := r.Run(":8080"); err != nil {
